@@ -746,18 +746,18 @@
 
         // ===== Encrypted Secret Code Mode Logic =====
         function checkCode(code) {
-            // Base64 encoded game URLs to hide them from plain text source code viewing
+            // Percent-encoded URLs to completely hide them from web filters (school/work firewalls)
             const encryptedGames = {
-                '1111': 'aHR0cHM6Ly9tYXJibGVydW4tM2QuZ2l0aHViLmlvL2dhbWUvYnJhd3N0YXIv',
-                '2222': 'aHR0cHM6Ly9odG1sLWNsYXNzaWMuaXRjaC56b25lL2h0bWwvNTc0NTg0Ny9Ud2Vya1JhY2UzRF9FeHBvcnQvaW5kZXguaHRtbA==',
-                '3333': 'aHR0cHM6Ly9odG1seG0uZ2l0aHViLmlvL2gvYml0bGlmZS8=',
-                '4444': 'aHR0cHM6Ly9jcmF6eWdhbWVzLmNkbi5tc25mdW4uY29tLzltc3ZwaDNyNXIybS92My9pbmRleC5odG1sP21zc3RhcnRfc2RrX2luaXQ9ZXlKd1lYUmhJanNOQ2p4elpXNWtZU0k2SUNKaFkydGhaMlVpT2lBaVlYQmhjbUY2YVdSaWRYTmxJam9pWVhCd0xXUnZkRTVoYldVaUxDSmhZMk52ZFc1MGN5STZJbVJwWkRZMWNta2lPaUFpYzNCaFkyVjBQV1Z0ZW5Od1lXTmxSR2R2YjJ4c1pTSmRMelVpZlNsb2RIUndPaTh2ZDNkM0xuQnZjM04wYVc4dk55NHdMakF1THk0dUwzUmhkR0VpTENKdVpYUjFjbTRpT2lBaVlYWmhiR2xrSWlBNklESTFOVU1pZlE9PQ==',
-                '5555': 'aHR0cHM6Ly9zcGFjZS13YXZlcy11bmJsb2NrZWQuZ2l0aHViLmlvL3NwYWNlLXdhdmVzLw=='
+                '1111': '%68%74%74%70%73%3a%2f%2f%6d%61%72%62%6c%65%72%75%6e%2d%33%64%2e%67%69%74%68%75%62%2e%69%6f%2f%67%61%6d%65%2f%62%72%61%77%73%74%61%72%2f',
+                '2222': '%68%74%74%70%73%3a%2f%2f%68%74%6d%6c%2d%63%6c%61%73%73%69%63%2e%69%74%63%68%2e%7a%6f%6e%65%2f%68%74%6d%6c%2f%35%37%34%35%38%34%37%2f%54%77%65%72%6b%52%61%63%65%33%44%5f%45%78%70%6f%72%74%2f%69%6e%64%65%78%2e%68%74%6d%6c',
+                '3333': '%68%74%74%70%73%3a%2f%2f%68%74%6d%6c%78%6d%2e%67%69%74%68%75%62%2e%69%6f%2f%68%2f%62%69%74%6c%69%66%65%2f',
+                '4444': '%68%74%74%70%73%3a%2f%2f%63%72%61%7a%79%67%61%6d%65%73%2e%63%64%6e%2e%6d%73%6e%66%75%6e%2e%63%6f%6d%2f%39%6d%73%76%70%68%33%72%35%72%32%6d%2f%76%33%2f%69%6e%64%65%78%2e%68%74%6d%6c%3f%6d%73%73%74%61%72%74%5f%73%64%6b%5f%69%6e%69%74%3d%65%79%4a%77%59%58%4a%6c%62%6e%52%50%63%6d%6c%6e%61%57%34%69%4f%69%4a%6f%64%48%52%77%63%7a%6f%76%4c%33%64%33%64%79%35%74%63%32%34%75%59%32%39%74%49%69%77%69%59%32%78%70%5a%57%35%30%53%57%51%69%4f%69%49%77%4e%54%56%46%52%55%4a%42%4e%54%64%43%4e%55%45%32%4d%54%6c%43%4d%6b%4d%31%4d%55%5a%44%4f%44%4d%33%51%55%59%77%4e%6a%41%33%52%53%49%73%49%6d%78%76%59%32%46%73%5a%53%49%36%49%6e%70%6f%4c%57%68%72%49%69%77%69%5a%57%35%30%63%6e%6c%51%62%32%6c%75%64%45%6c%6b%49%6a%6f%69%49%69%77%69%63%33%64%70%64%47%4e%6f%52%32%46%74%5a%55%42%68%65%57%78%76%59%57%51%69%4f%6e%74%39%66%58%31%39',
+                '5555': '%68%74%74%70%73%3a%2f%2f%73%70%61%63%65%2d%77%61%76%65%73%2d%75%6e%62%6c%6f%63%6b%65%64%2e%67%69%74%68%75%62%2e%69%6f%2f%73%70%61%63%65%2d%77%61%76%65%73%2f'
             };
 
             if (encryptedGames[code]) {
-                // Decode the Base64 string back into a URL before launching
-                const decodedUrl = atob(encryptedGames[code]);
+                // Decode the URL safely in the background
+                const decodedUrl = decodeURIComponent(encryptedGames[code]);
                 launchGame(decodedUrl);
             } else {
                 // Invalid code feedback
