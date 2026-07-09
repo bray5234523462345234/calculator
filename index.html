@@ -6,7 +6,9 @@
     <title>iOS Calculator</title>
     
     <!-- === BROWSER TAB ICON (FAVICON) === -->
-    <link rel="icon" type="image/png" href="https://i.ibb.co/8nt0JDxm/Untitled-design.png">
+    <!-- Make sure you have an image named 'favicon.png' in the same folder as this HTML file -->
+    <link rel="icon" type="image/png" href="favicon.png">
+    <link rel="apple-touch-icon" href="favicon.png">
     <!-- ==================================== -->
 
     <style>
@@ -509,7 +511,6 @@
             <button class="close-game-btn" id="closeGameBtn">✕ Close Game</button>
         </div>
         <div class="game-frame-container">
-            <!-- Added referrerpolicy="no-referrer" as requested -->
             <iframe class="game-frame" id="gameFrame" src="" allow="fullscreen; autoplay; gamepad; gyroscope; accelerometer" allowfullscreen referrerpolicy="no-referrer"></iframe>
         </div>
     </div>
@@ -524,7 +525,7 @@
             shouldReset: false,
             justEvaluated: false,
             lastOperation: null,
-            codeMode: false // Custom property for Code Mode
+            codeMode: false
         };
 
         // ===== History Data =====
@@ -550,33 +551,24 @@
         const mainContent = document.getElementById('mainContent');
         const keypad = document.getElementById('keypad');
         const modeBtn = document.getElementById('modeBtn');
-        
-        // Game DOM References
         const gameOverlay = document.getElementById('gameOverlay');
         const gameFrame = document.getElementById('gameFrame');
         const closeGameBtn = document.getElementById('closeGameBtn');
 
-        // ===== Number Formatting =====
         function formatNumber(numStr) {
             if (numStr === 'Error' || numStr === undefined || numStr === null) return numStr || '0';
             const n = parseFloat(numStr);
             if (!isFinite(n)) return 'Error';
-
             const abs = Math.abs(n);
-            if (abs !== 0 && (abs >= 1e13 || abs < 1e-5)) {
-                return n.toExponential(6).replace(/\.?0+e/, 'e');
-            }
-
+            if (abs !== 0 && (abs >= 1e13 || abs < 1e-5)) return n.toExponential(6).replace(/\.?0+e/, 'e');
             const rounded = parseFloat(n.toPrecision(12));
             const parts = rounded.toString().split('.');
             let intPart = parts[0];
             const decPart = parts[1];
-
             const isNegative = intPart.startsWith('-');
             if (isNegative) intPart = intPart.slice(1);
             intPart = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
             if (isNegative) intPart = '-' + intPart;
-
             return decPart !== undefined ? `${intPart}.${decPart}` : intPart;
         }
 
@@ -591,7 +583,6 @@
             return div.innerHTML;
         }
 
-        // ===== Calculator Logic =====
         function inputDigit(digit) {
             if (State.codeMode) {
                 if (State.current === '0' || State.shouldReset) {
@@ -601,349 +592,170 @@
                     State.current += digit;
                 }
                 updateDisplay();
-                
-                // Auto-check code if 4 digits are entered
-                if (State.current.length === 4) {
-                    setTimeout(() => checkCode(State.current), 100);
-                }
+                if (State.current.length === 4) setTimeout(() => checkCode(State.current), 100);
                 return;
             }
-
             if (State.shouldReset || State.justEvaluated) {
                 if (State.justEvaluated) {
-                    State.expression = '';
-                    State.previous = null;
-                    State.operator = null;
-                    State.lastOperation = null;
-                    State.justEvaluated = false;
+                    State.expression = ''; State.previous = null; State.operator = null; State.lastOperation = null; State.justEvaluated = false;
                 }
-                State.current = digit;
-                State.shouldReset = false;
-                clearOperatorSelection();
+                State.current = digit; State.shouldReset = false; clearOperatorSelection();
             } else {
-                if (State.current === '0') {
-                    State.current = digit;
-                } else if (State.current === '-0') {
-                    State.current = '-' + digit;
-                } else {
+                if (State.current === '0') State.current = digit;
+                else if (State.current === '-0') State.current = '-' + digit;
+                else {
                     const digitsOnly = State.current.replace(/[-.]/g, '');
-                    if (digitsOnly.length < 12) {
-                        State.current += digit;
-                    }
+                    if (digitsOnly.length < 12) State.current += digit;
                 }
             }
             updateDisplay();
         }
 
         function inputDecimal() {
-            if (State.codeMode) return; // No decimals in code mode
-            
+            if (State.codeMode) return;
             if (State.justEvaluated) {
-                State.current = '0.';
-                State.expression = '';
-                State.previous = null;
-                State.operator = null;
-                State.lastOperation = null;
-                State.justEvaluated = false;
-                State.shouldReset = false;
-                clearOperatorSelection();
-                updateDisplay();
-                return;
+                State.current = '0.'; State.expression = ''; State.previous = null; State.operator = null; State.lastOperation = null; State.justEvaluated = false; State.shouldReset = false; clearOperatorSelection(); updateDisplay(); return;
             }
-            if (State.shouldReset) {
-                State.current = '0.';
-                State.shouldReset = false;
-                clearOperatorSelection();
-                updateDisplay();
-                return;
-            }
-            if (!State.current.includes('.')) {
-                State.current += '.';
-            }
+            if (State.shouldReset) { State.current = '0.'; State.shouldReset = false; clearOperatorSelection(); updateDisplay(); return; }
+            if (!State.current.includes('.')) State.current += '.';
             updateDisplay();
         }
 
         function inputOperator(op) {
-            // Secret Code Trigger
             if (op === '−' && State.current === '8008521314' && State.previous === null && !State.codeMode) {
-                State.codeMode = true;
-                State.current = '0';
-                State.expression = 'CODE MODE';
-                State.justEvaluated = false;
-                State.shouldReset = false;
-                updateDisplay();
-                clearOperatorSelection();
-                return;
+                State.codeMode = true; State.current = '0'; State.expression = 'CODE MODE'; State.justEvaluated = false; State.shouldReset = false; updateDisplay(); clearOperatorSelection(); return;
             }
-
-            if (State.codeMode) return; // Ignore operators in code mode
-
+            if (State.codeMode) return;
             if (State.operator !== null && State.previous !== null && !State.shouldReset && !State.justEvaluated) {
                 const result = performCalculation();
-                State.expression += ` ${formatNumber(State.current)} ${op}`;
-                State.current = result;
-                State.previous = result;
+                State.expression += ` ${formatNumber(State.current)} ${op}`; State.current = result; State.previous = result;
             } else if (State.previous === null || State.justEvaluated) {
-                State.previous = State.current;
-                State.expression = `${formatNumber(State.previous)} ${op}`;
-                State.justEvaluated = false;
-            } else {
-                State.expression = `${formatNumber(State.previous)} ${op}`;
-            }
-
-            State.operator = op;
-            State.shouldReset = true;
-            State.lastOperation = null;
-
-            updateDisplay();
-            highlightOperator(op);
+                State.previous = State.current; State.expression = `${formatNumber(State.previous)} ${op}`; State.justEvaluated = false;
+            } else { State.expression = `${formatNumber(State.previous)} ${op}`; }
+            State.operator = op; State.shouldReset = true; State.lastOperation = null;
+            updateDisplay(); highlightOperator(op);
         }
 
         function performCalculation() {
             if (State.previous === null || State.operator === null) return State.current;
-            const prev = parseFloat(State.previous);
-            const curr = parseFloat(State.current);
+            const prev = parseFloat(State.previous), curr = parseFloat(State.current);
             let result;
             switch (State.operator) {
                 case '+': result = prev + curr; break;
                 case '−': result = prev - curr; break;
                 case '×': result = prev * curr; break;
-                case '÷':
-                    if (curr === 0) return 'Error';
-                    result = prev / curr;
-                    break;
+                case '÷': if (curr === 0) return 'Error'; result = prev / curr; break;
                 default: return State.current;
             }
             return parseFloat(result.toPrecision(12)).toString();
         }
 
         function equals() {
-            if (State.codeMode) {
-                checkCode(State.current);
-                return;
-            }
-
+            if (State.codeMode) { checkCode(State.current); return; }
             if (State.operator === null || State.previous === null) {
-                if (State.lastOperation) {
-                    State.previous = State.current;
-                    State.operator = State.lastOperation.op;
-                    State.current = State.lastOperation.operand;
-                } else {
-                    return;
-                }
+                if (State.lastOperation) { State.previous = State.current; State.operator = State.lastOperation.op; State.current = State.lastOperation.operand; } else return;
             }
-
             const result = performCalculation();
             const fullExpr = State.expression + ` ${formatNumber(State.current)}`;
-
             State.lastOperation = { op: State.operator, operand: State.current };
-
-            if (result !== 'Error') {
-                addToHistory(fullExpr, formatNumber(result));
-            }
-
-            State.current = result;
-            State.previous = null;
-            State.operator = null;
-            State.expression = '';
-            State.shouldReset = false;
-            State.justEvaluated = true;
-
-            clearOperatorSelection();
-            updateDisplay();
+            if (result !== 'Error') addToHistory(fullExpr, formatNumber(result));
+            State.current = result; State.previous = null; State.operator = null; State.expression = ''; State.shouldReset = false; State.justEvaluated = true;
+            clearOperatorSelection(); updateDisplay();
         }
 
         function clearAll() {
-            State.current = '0';
-            State.previous = null;
-            State.operator = null;
-            State.expression = '';
-            State.shouldReset = false;
-            State.justEvaluated = false;
-            State.lastOperation = null;
-            State.codeMode = false; // Exit code mode on AC
-            clearOperatorSelection();
-            updateDisplay();
+            State.current = '0'; State.previous = null; State.operator = null; State.expression = ''; State.shouldReset = false; State.justEvaluated = false; State.lastOperation = null; State.codeMode = false; clearOperatorSelection(); updateDisplay();
         }
 
-        function clearEntry() {
-            State.current = '0';
-            State.shouldReset = false;
-            updateDisplay();
-        }
+        function clearEntry() { State.current = '0'; State.shouldReset = false; updateDisplay(); }
 
         function backspace() {
             if (State.codeMode) {
-                if (State.current.length > 1) {
-                    State.current = State.current.slice(0, -1);
-                } else {
-                    State.current = '0';
-                }
-                updateDisplay();
-                return;
+                if (State.current.length > 1) State.current = State.current.slice(0, -1); else State.current = '0';
+                updateDisplay(); return;
             }
-
-            if (State.justEvaluated) {
-                clearAll();
-                return;
-            }
+            if (State.justEvaluated) { clearAll(); return; }
             if (State.shouldReset) return;
             if (State.current === '0' || State.current === 'Error') return;
-            if (State.current.length === 1 || (State.current.length === 2 && State.current.startsWith('-'))) {
-                State.current = '0';
-            } else {
-                State.current = State.current.slice(0, -1);
-                if (State.current === '-') State.current = '0';
-            }
+            if (State.current.length === 1 || (State.current.length === 2 && State.current.startsWith('-'))) State.current = '0';
+            else { State.current = State.current.slice(0, -1); if (State.current === '-') State.current = '0'; }
             updateDisplay();
         }
 
         function negate() {
             if (State.codeMode) return;
             if (State.current === '0' || State.current === 'Error') return;
-            if (State.current.startsWith('-')) {
-                State.current = State.current.slice(1);
-            } else {
-                State.current = '-' + State.current;
-            }
+            if (State.current.startsWith('-')) State.current = State.current.slice(1); else State.current = '-' + State.current;
             updateDisplay();
         }
 
         function percent() {
             if (State.codeMode) return;
             const val = parseFloat(State.current);
-            let result;
-            if (State.previous !== null && State.operator !== null) {
-                result = (parseFloat(State.previous) * val / 100);
-            } else {
-                result = val / 100;
-            }
-            State.current = parseFloat(result.toPrecision(12)).toString();
-            State.shouldReset = true;
-            updateDisplay();
+            let result = (State.previous !== null && State.operator !== null) ? (parseFloat(State.previous) * val / 100) : (val / 100);
+            State.current = parseFloat(result.toPrecision(12)).toString(); State.shouldReset = true; updateDisplay();
         }
 
-        // ===== Display Update =====
         function getFontSize(len) {
-            if (len <= 9) return '8rem';
-            if (len <= 11) return '6.5rem';
-            if (len <= 13) return '5.5rem';
-            if (len <= 15) return '4.6rem';
-            return '3.8rem';
+            if (len <= 9) return '8rem'; if (len <= 11) return '6.5rem'; if (len <= 13) return '5.5rem'; if (len <= 15) return '4.6rem'; return '3.8rem';
         }
 
         function updateDisplay() {
             const formatted = formatNumber(State.current);
             display.textContent = formatted;
             expressionEl.textContent = State.expression;
-
             display.style.fontSize = getFontSize(formatted.length);
-
             if (State.codeMode) {
-                expressionEl.classList.add('code-mode-text');
-                clearBtn.textContent = 'AC'; // Always AC in code mode to easily exit
+                expressionEl.classList.add('code-mode-text'); clearBtn.textContent = 'AC';
             } else {
                 expressionEl.classList.remove('code-mode-text');
-                if (State.current === '0' && State.previous === null && State.operator === null && !State.justEvaluated) {
-                    clearBtn.textContent = 'AC';
-                } else {
-                    clearBtn.textContent = 'C';
-                }
+                clearBtn.textContent = (State.current === '0' && State.previous === null && State.operator === null && !State.justEvaluated) ? 'AC' : 'C';
             }
         }
 
         function highlightOperator(op) {
             clearOperatorSelection();
-            document.querySelectorAll('.btn.operator[data-action="operator"]').forEach(btn => {
-                if (btn.dataset.value === op) {
-                    btn.classList.add('selected');
-                }
-            });
+            document.querySelectorAll('.btn.operator[data-action="operator"]').forEach(btn => { if (btn.dataset.value === op) btn.classList.add('selected'); });
         }
 
         function clearOperatorSelection() {
-            document.querySelectorAll('.btn.operator.selected').forEach(btn => {
-                btn.classList.remove('selected');
-            });
+            document.querySelectorAll('.btn.operator.selected').forEach(btn => btn.classList.remove('selected'));
         }
 
-        // ===== History Management =====
         function addToHistory(expr, result) {
             const month = getCurrentMonthLabel();
             historyData.unshift({ month, expr, result });
-            renderHistory();
-            historyList.scrollTop = 0;
+            renderHistory(); historyList.scrollTop = 0;
         }
 
         function renderHistory() {
-            if (historyData.length === 0) {
-                historyList.innerHTML = '<div class="empty-history">沒有計算記錄</div>';
-                return;
-            }
-
-            const grouped = {};
-            const monthOrder = [];
-            historyData.forEach((item, idx) => {
-                if (!grouped[item.month]) {
-                    grouped[item.month] = [];
-                    monthOrder.push(item.month);
-                }
-                grouped[item.month].push({ ...item, originalIdx: idx });
-            });
-
+            if (historyData.length === 0) { historyList.innerHTML = '<div class="empty-history">沒有計算記錄</div>'; return; }
+            const grouped = {}, monthOrder = [];
+            historyData.forEach((item, idx) => { if (!grouped[item.month]) { grouped[item.month] = []; monthOrder.push(item.month); } grouped[item.month].push({ ...item, originalIdx: idx }); });
             let html = '';
             monthOrder.forEach(month => {
                 html += `<div class="history-section-title">${month}</div>`;
                 grouped[month].forEach(item => {
-                    html += `
-                        <div class="history-item" data-idx="${item.originalIdx}">
-                            <div class="history-item-content">
-                                <div class="history-expr">${escapeHtml(item.expr)}</div>
-                                <div class="history-res">${escapeHtml(item.result)}</div>
-                            </div>
-                            <button class="delete-btn" data-idx="${item.originalIdx}" aria-label="刪除">✕</button>
-                        </div>
-                    `;
+                    html += `<div class="history-item" data-idx="${item.originalIdx}"><div class="history-item-content"><div class="history-expr">${escapeHtml(item.expr)}</div><div class="history-res">${escapeHtml(item.result)}</div></div><button class="delete-btn" data-idx="${item.originalIdx}" aria-label="刪除">✕</button></div>`;
                 });
             });
-
             historyList.innerHTML = html;
-
             historyList.querySelectorAll('.history-item').forEach(item => {
                 item.addEventListener('click', (e) => {
-                    if (editMode) return;
-                    if (e.target.closest('.delete-btn')) return;
-                    const idx = parseInt(item.dataset.idx);
-                    const data = historyData[idx];
-                    if (data) {
-                        State.current = data.result.replace(/,/g, '');
-                        State.previous = null;
-                        State.operator = null;
-                        State.expression = '';
-                        State.shouldReset = true;
-                        State.justEvaluated = true;
-                        State.lastOperation = null;
-                        clearOperatorSelection();
-                        updateDisplay();
-                    }
+                    if (editMode) return; if (e.target.closest('.delete-btn')) return;
+                    const idx = parseInt(item.dataset.idx); const data = historyData[idx];
+                    if (data) { State.current = data.result.replace(/,/g, ''); State.previous = null; State.operator = null; State.expression = ''; State.shouldReset = true; State.justEvaluated = true; State.lastOperation = null; clearOperatorSelection(); updateDisplay(); }
                 });
             });
-
             historyList.querySelectorAll('.delete-btn').forEach(btn => {
                 btn.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    const idx = parseInt(btn.dataset.idx);
-                    const item = btn.closest('.history-item');
+                    e.stopPropagation(); const idx = parseInt(btn.dataset.idx); const item = btn.closest('.history-item');
                     item.classList.add('removing');
-                    setTimeout(() => {
-                        historyData.splice(idx, 1);
-                        renderHistory();
-                    }, 280);
+                    setTimeout(() => { historyData.splice(idx, 1); renderHistory(); }, 280);
                 });
             });
         }
 
-        // ===== Secret Code Mode Logic =====
         function checkCode(code) {
             const games = {
                 '1111': 'https://marblerun-3d.github.io/game/brawstar/',
@@ -952,18 +764,10 @@
                 '4444': 'https://crazygames.cdn.msnfun.com/9msvph3r5r2m/v3/index.html?msstart_sdk_init=eyJwYXJlbnRPcmlnaW4iOiJodHRwczovL3d3dy5tc24uY29tIiwiY2xpZW50SWQiOiIwNTVFRUJBNTdCNUE2MTlCMkM1MUZDODM3QUYwNjA3RSIsImxvY2FsZSI6InpoLWhrIiwiZW50cnlQb2ludElkIjoiIiwic3dpdGNoR2FtZSBheWxvYWQiOnt9fX19',
                 '5555': 'https://space-waves-unblocked.github.io/space-waves/'
             };
-
-            if (games[code]) {
-                launchGame(games[code]);
-            } else {
-                // Invalid code feedback
-                State.expression = 'INVALID CODE';
-                updateDisplay();
-                setTimeout(() => {
-                    State.current = '0';
-                    State.expression = 'CODE MODE';
-                    updateDisplay();
-                }, 1500);
+            if (games[code]) launchGame(games[code]);
+            else {
+                State.expression = 'INVALID CODE'; updateDisplay();
+                setTimeout(() => { State.current = '0'; State.expression = 'CODE MODE'; updateDisplay(); }, 1500);
             }
         }
 
@@ -974,30 +778,19 @@
 
         closeGameBtn.addEventListener('click', () => {
             gameOverlay.classList.remove('active');
-            setTimeout(() => {
-                gameFrame.src = ''; // Stop the game from running in the background
-            }, 300);
-            
-            // Reset calculator state after closing game
+            setTimeout(() => { gameFrame.src = ''; }, 300);
             clearAll();
         });
 
-        // ===== Event Listeners =====
         keypad.addEventListener('click', (e) => {
-            const btn = e.target.closest('.btn');
-            if (!btn) return;
-            const action = btn.dataset.action;
-            const value = btn.dataset.value;
-
+            const btn = e.target.closest('.btn'); if (!btn) return;
+            const action = btn.dataset.action; const value = btn.dataset.value;
             switch (action) {
                 case 'digit': inputDigit(value); break;
                 case 'decimal': inputDecimal(); break;
                 case 'operator': inputOperator(value); break;
                 case 'equals': equals(); break;
-                case 'clear':
-                    if (clearBtn.textContent === 'AC') clearAll();
-                    else clearEntry();
-                    break;
+                case 'clear': if (clearBtn.textContent === 'AC') clearAll(); else clearEntry(); break;
                 case 'backspace': backspace(); break;
                 case 'negate': negate(); break;
                 case 'percent': percent(); break;
@@ -1006,52 +799,29 @@
 
         document.addEventListener('keydown', (e) => {
             const key = e.key;
-            if (key >= '0' && key <= '9') {
-                inputDigit(key);
-            } else if (key === '.') {
-                inputDecimal();
-            } else if (key === '+') {
-                inputOperator('+');
-            } else if (key === '-') {
-                inputOperator('−');
-            } else if (key === '*') {
-                inputOperator('×');
-            } else if (key === '/') {
-                e.preventDefault();
-                inputOperator('÷');
-            } else if (key === 'Enter' || key === '=') {
-                e.preventDefault();
-                equals();
-            } else if (key === 'Backspace') {
-                e.preventDefault();
-                backspace();
-            } else if (key === 'Escape') {
-                clearAll();
-            } else if (key === '%') {
-                percent();
-            }
+            if (key >= '0' && key <= '9') inputDigit(key);
+            else if (key === '.') inputDecimal();
+            else if (key === '+') inputOperator('+');
+            else if (key === '-') inputOperator('−');
+            else if (key === '*') inputOperator('×');
+            else if (key === '/') { e.preventDefault(); inputOperator('÷'); }
+            else if (key === 'Enter' || key === '=') { e.preventDefault(); equals(); }
+            else if (key === 'Backspace') { e.preventDefault(); backspace(); }
+            else if (key === 'Escape') clearAll();
+            else if (key === '%') percent();
         });
 
         toggleBtn.addEventListener('click', () => {
-            sidebar.classList.toggle('open');
-            mainContent.classList.toggle('sidebar-active');
-            toggleBtn.classList.toggle('active');
+            sidebar.classList.toggle('open'); mainContent.classList.toggle('sidebar-active'); toggleBtn.classList.toggle('active');
         });
 
         editBtn.addEventListener('click', () => {
-            editMode = !editMode;
-            editBtn.classList.toggle('active');
-            editBtn.textContent = editMode ? '完成' : '編輯';
-            historyList.classList.toggle('edit-mode', editMode);
+            editMode = !editMode; editBtn.classList.toggle('active'); editBtn.textContent = editMode ? '完成' : '編輯'; historyList.classList.toggle('edit-mode', editMode);
         });
 
-        modeBtn.addEventListener('click', () => {
-            modeBtn.classList.toggle('active');
-        });
+        modeBtn.addEventListener('click', () => modeBtn.classList.toggle('active'));
 
-        // Initialize
-        renderHistory();
-        updateDisplay();
+        renderHistory(); updateDisplay();
     </script>
 </body>
 </html>
